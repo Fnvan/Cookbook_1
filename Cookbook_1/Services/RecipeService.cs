@@ -5,8 +5,8 @@ using Cookbook_1.ENums;
 using Cookbook_1.Exceptions;
 using Cookbook_1.Models;
 using Microsoft.EntityFrameworkCore;
-using System.Linq;
 using System.Linq.Expressions;
+using System.Threading.Tasks;
 using System.Xml.Linq;
 
 
@@ -25,18 +25,18 @@ namespace Cookbook_1.Services
         }
 
 
-        public RecipeVm CreateRecipe(int userId, CreateRecipeDto dto)
+        public async Task<RecipeVm> CreateRecipeAsync(int userId, CreateRecipeDto dto, CancellationToken cancellationToken)
         {
             var newRecipe = _mapper.Map<Recipe>(dto);
             newRecipe.UserId = userId;
 
-            var recipeExists = _applicationDbContext.Recipes.AsNoTracking().FirstOrDefault(recipe => recipe.Name == newRecipe.Name);
+            var recipeExists = await _applicationDbContext.Recipes.AsNoTracking().FirstOrDefaultAsync(recipe => recipe.Name == newRecipe.Name);
             if (recipeExists != null)
             {
                 throw new RecipeAlreadyExistsException(newRecipe.Name);
             }
 
-            var existingIngredients = GetExistingIngredients(newRecipe.RequiredIngredients);
+            var existingIngredients = await GetExistingIngredients(newRecipe.RequiredIngredients);
             newRecipe.Name = newRecipe.Name.Trim();
 
             foreach (var ingredientInRecipe in newRecipe.RequiredIngredients)
@@ -51,18 +51,18 @@ namespace Cookbook_1.Services
             return newRecipeVm;
         }
 
-        public RecipeVm GetRecipe(int id)
+        public async Task<RecipeVm> GetRecipeAsync(int id, CancellationToken cancellationToken)
         {
-            var recipe = GetRecipeWithIngredientsOrThrowException(id);
+            var recipe = await GetRecipeWithIngredientsOrThrowExceptionAsync(id);
 
             var recipeVm = _mapper.Map<RecipeVm>(recipe); 
 
             return recipeVm;
         }
 
-        public RecipeVm UpdateRecipe(UpdateRecipeDto dto)
+        public async Task<RecipeVm> UpdateRecipeAsync(UpdateRecipeDto dto, CancellationToken cancellationToken)
         {
-            var recipeToUpdate = GetRecipeWithIngredientsOrThrowException(dto.Id);
+            var recipeToUpdate = await GetRecipeWithIngredientsOrThrowExceptionAsync(dto.Id);
             recipeToUpdate.Name = dto.NewName ?? recipeToUpdate.Name;
             recipeToUpdate.CookingDescription = dto.NewDescription ?? recipeToUpdate.CookingDescription;
 
@@ -96,17 +96,17 @@ namespace Cookbook_1.Services
             return recipeVm;
         }
 
-        public void DeleteRecipe(int id)
+        public async Task DeleteRecipeAsync(int id, CancellationToken cancellationToken)
         {
-            var recipe = _applicationDbContext.Recipes.FirstOrDefault(recipe => recipe.Id == id) ?? throw new RecipeNotFoundException(id);
+            var recipe = await _applicationDbContext.Recipes.FirstOrDefaultAsync(recipe => recipe.Id == id) ?? throw new RecipeNotFoundException(id);
             _applicationDbContext.Recipes.Remove(recipe); 
             _applicationDbContext.SaveChanges();
         }
 
-        public void RateTheRecipe(int id, int userId, RecipeRating rating)
+        public async Task RateTheRecipeAsync(int id, int userId, RecipeRating rating, CancellationToken cancellationToken)
         {
-            var recipe = GetRecipeWithIngredientsOrThrowException(id);
-            var existingRating = _applicationDbContext.Ratings.FirstOrDefault(r => r.RatedRecipeId == id && r.RatedUserId == userId);
+            var recipe = await GetRecipeWithIngredientsOrThrowExceptionAsync(id);
+            var existingRating = await _applicationDbContext.Ratings.FirstOrDefaultAsync(r => r.RatedRecipeId == id && r.RatedUserId == userId);
             if (existingRating is not null)
                 throw new InvalidOperationException("Пользователь уже оценил этот рецепт");
 
@@ -129,28 +129,28 @@ namespace Cookbook_1.Services
 
         }
 
-        private Dictionary<int, Ingredient> GetExistingIngredients(List<IngredientInRecipe> ingredients)
+        private async Task<Dictionary<int, Ingredient>> GetExistingIngredients(List<IngredientInRecipe> ingredients)
         {
             List<int> IngredientsIds = [.. ingredients.Select(i => i.IngredientId)]; //что за две точки?
-            var existingIngredients = _applicationDbContext.Ingredients.Where(i => IngredientsIds.Contains(i.Id)).ToDictionary(i => i.Id);
+            var existingIngredients = await _applicationDbContext.Ingredients.Where(i => IngredientsIds.Contains(i.Id)).ToDictionaryAsync(i => i.Id);
             return existingIngredients;
         }
 
-        private Recipe GetRecipeWithIngredientsOrThrowException(int recipeId)
+        private async Task<Recipe> GetRecipeWithIngredientsOrThrowExceptionAsync(int recipeId)
         {
-            var recipe = _applicationDbContext.Recipes.Where(r => r.Id == recipeId)
+            var recipe = await _applicationDbContext.Recipes.Where(r => r.Id == recipeId)
                 .Include(i => i.RequiredIngredients)
-                .ThenInclude(i => i.Ingredient).FirstOrDefault() ?? throw new RecipeNotFoundException(recipeId);
+                .ThenInclude(i => i.Ingredient).FirstOrDefaultAsync() ?? throw new RecipeNotFoundException(recipeId);
             return recipe;
         }
 
-        public List<RecipeVm> GetFilteredRecipesListByUser(int userId)
+        public async Task<List<RecipeVm>> GetFilteredRecipesListByUserAsync(int userId, CancellationToken cancellationToken)
         {
-            var filteredRecipes = _applicationDbContext.Recipes.Where(u => u.UserId == userId)
+            var filteredRecipes = await _applicationDbContext.Recipes.Where(u => u.UserId == userId)
                 .Include(i => i.RequiredIngredients)
-                .ThenInclude(i => i.Ingredient).ToList();
+                .ThenInclude(i => i.Ingredient).ToListAsync();
 
-            if (!filteredRecipes.Any())
+            if (filteredRecipes.Count() == 0)
             {
                 throw new UserNotFoundException(userId);
             }
@@ -159,42 +159,53 @@ namespace Cookbook_1.Services
             return recipeListVm;
         }
 
-        public List<RecipeVm> GetFilteredRecipeList(double? minRating, int? userId, string? name, RecipeFilterBy filterType, bool? ascending)
+        public async Task<List<RecipeVm>> GetFilteredRecipeListAsync(double? minRating, int? userId, string? name, RecipeFilterBy? filterType, bool? ascending, CancellationToken cancellationToken)
         {
+             
+            List<RecipeVm> recipeListVm;
 
-            List<RecipeVm> recipeListVm = new List<RecipeVm>();
-
-            switch (filterType)
+            if (minRating is not null)
             {
-                case RecipeFilterBy.Title:
-                    recipeListVm = Filter(r => r.Name == name);
-                    if (!recipeListVm.Any())
-                        throw new FilterException("Рецептов с таким названием нет!");
-                    return recipeListVm;
-                case RecipeFilterBy.Rating:
-                    recipeListVm = Filter(r => r.Rating >=  minRating);
-                    if (!recipeListVm.Any())
-                        throw new FilterException("Рецептов с таким рейтингом нет!");
-                    return recipeListVm;
-                case RecipeFilterBy.User:
-                    recipeListVm = Filter(r => r.UserId == userId);
-                    if (!recipeListVm.Any())
-                        throw new FilterException("неверный id пользователя");
-                    return recipeListVm;
-                default:
-                    throw new FilterException("Неверные настройки фильтра");
-                    
+                recipeListVm = await FilterAsync(r => r.Rating >= minRating);
+                if (ascending is not null)
+                    recipeListVm = SortList(recipeListVm, r => r.Rating, ascending.Value);
             }
+            else if (!string.IsNullOrEmpty(name))
+            {
+                recipeListVm = await FilterAsync(r => r.Name == name);
+                if (ascending is not null)
+                    recipeListVm = SortList(recipeListVm, r => r.Name, ascending.Value);
+            }
+            else if (userId is not null)
+            {
+                recipeListVm = await FilterAsync(r => r.UserId == userId);
+            }
+            else
+                throw new FilterException("Неверные настройки фильтра");
+
+            if(!recipeListVm.Any())
+                throw new FilterException("Рецептов по заданному фильтру не найдено");
+
+            return recipeListVm;
         }
 
-        private List<RecipeVm> Filter(Expression<Func<Recipe, bool>> expression)
+        private async Task<List<RecipeVm>> FilterAsync(Expression<Func<Recipe, bool>> expression)
         {
-            var filteredRecipes = _applicationDbContext.Recipes.Where(expression)
+            var filteredRecipes = await _applicationDbContext.Recipes
+                .Where(expression)
                 .Include(i => i.RequiredIngredients)
-                .ThenInclude(i => i.Ingredient).ToList();
+                .ThenInclude(i => i.Ingredient)
+                .ToListAsync();
 
             var recipeListVm = _mapper.Map<List<RecipeVm>>(filteredRecipes);
             return recipeListVm;
+        }
+
+        private List<RecipeVm> SortList<Tkey>(List<RecipeVm> list, Func<RecipeVm, Tkey> keySelector, bool ascending)
+        {
+            return ascending
+                ? list.OrderBy(keySelector).ToList()
+                : list.OrderByDescending(keySelector).ToList();
         }
     }
 }

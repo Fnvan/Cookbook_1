@@ -4,11 +4,11 @@ namespace Cookbook_1.Abstractions
 {
     public interface IAuthService
     {
-        LogInResponse SignUp(CreateUserDto dto);
-        LogInResponse? LogIn(string login, string password);
-        bool LogOut(int userId);
+        Task <LogInResponse> SignUpAsync(CreateUserDto dto);
+        Task <LogInResponse?> LogInAsync(string login, string password);
+        Task<bool> LogOutAsync(int userId);
         bool VerifyToken(int userId, string token);
 
-        LogInResponse? Refresh(string refreshToken);
+        Task<LogInResponse?> RefreshTokenAsync(string refreshToken);
     }
 }

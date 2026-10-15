@@ -6,18 +6,18 @@ namespace Cookbook_1.Abstractions
 {
     public interface IRecipeService
     {
-        public RecipeVm CreateRecipe(int userId, CreateRecipeDto dto);
+        Task<RecipeVm> CreateRecipeAsync(int userId, CreateRecipeDto dto, CancellationToken cancellationToken);
 
-        public RecipeVm GetRecipe(int id);
+        Task<RecipeVm> GetRecipeAsync(int id, CancellationToken cancellationToken);
 
-        public RecipeVm UpdateRecipe(UpdateRecipeDto dto);
+        Task<RecipeVm> UpdateRecipeAsync(UpdateRecipeDto dto, CancellationToken cancellationToken);
 
-        public void DeleteRecipe(int id);
+        Task DeleteRecipeAsync(int id, CancellationToken cancellationToken);
 
-        public void RateTheRecipe(int id, int userId, RecipeRating rating);
+        Task RateTheRecipeAsync(int id, int userId, RecipeRating rating, CancellationToken cancellationToken);
 
-        public List<RecipeVm> GetFilteredRecipesListByUser(int userId);
+        Task<List<RecipeVm>> GetFilteredRecipesListByUserAsync(int userId, CancellationToken cancellationToken);
 
-        public List<RecipeVm> GetFilteredRecipeList(double? minRating, int? userId, string? name, RecipeFilterBy filterType, bool? ascending);
+        Task<List<RecipeVm>> GetFilteredRecipeListAsync(double? minRating, int? userId, string? name, RecipeFilterBy? filterType, bool? ascending, CancellationToken cancellationTokens);
     }
 }

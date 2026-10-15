@@ -5,14 +5,14 @@ namespace Cookbook_1.Abstractions
 {
     public interface IUserService
     {
-        public UserVm CreateNewUser(CreateUserDto user);
+        Task<UserVm> CreateNewUserAsync(CreateUserDto user);
 
-        public UserVm GetUserProfile(int userId);
+        Task<UserVm> GetUserProfileAsync(int userId);
         
-        public UserVm UpdateUser(UpdateUserDto user);
+        Task<UserVm> UpdateUserAsync(UpdateUserDto user);
 
-        public void UpdateUserPassword(UpdateUserPasswordDto userPassword);
+        Task UpdateUserPasswordAsync(UpdateUserPasswordDto userPassword);
 
-        public List<Recipe> ShowUserRecipes(int userId);
+        Task <List<Recipe>> ShowUserRecipesAsync(int userId);
     }
 }

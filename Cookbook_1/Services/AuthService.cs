@@ -13,12 +13,12 @@ namespace Cookbook_1.Services
         //Возвращаем nullable, чтобы в контроллере независимо от проблем возвращать NotFound. 
         //Таким образом, даже если login верный, пользователь со стороны не узнат, существует ли у нас этот пользователь
 
-        public LogInResponse SignUp(CreateUserDto dto)
+        public async Task<LogInResponse> SignUpAsync(CreateUserDto dto)
         {
             var user = new User { Login = dto.Login, Password = PasswordHasher.HashPassword(dto.Password) };
 
             dbContext.Users.Add(user);
-            dbContext.SaveChanges();
+            await dbContext.SaveChangesAsync();
 
             var (jwt, refresh) = UpdateToken(user);
             dbContext.SaveChanges();
@@ -26,9 +26,9 @@ namespace Cookbook_1.Services
             return CreateResponse(jwt, refresh);
         }
 
-        public LogInResponse? LogIn(string login, string password)
+        public async Task<LogInResponse?> LogInAsync(string login, string password)
         {
-            var user = dbContext.Users.FirstOrDefault(x => x.Login == login);
+            var user = await dbContext.Users.FirstOrDefaultAsync(x => x.Login == login);
             if (user == null)
                 return null;
 
@@ -42,12 +42,12 @@ namespace Cookbook_1.Services
             return CreateResponse(jwt, refresh);
         }
 
-        public bool LogOut(int userId)
+        public async Task<bool> LogOutAsync(int userId)
         {
-            var user = dbContext.Users.FirstOrDefault(x => x.Id == userId);
+            var user = await dbContext.Users.FirstOrDefaultAsync(x => x.Id == userId);
             if (user == null) return false;
 
-            var token = dbContext.JwtTokens.FirstOrDefault(x => x.Id == userId);
+            var token = await dbContext.JwtTokens.FirstOrDefaultAsync(x => x.Id == userId);
             if (token is null) return false;
 
             dbContext.Remove(token);
@@ -64,11 +64,11 @@ namespace Cookbook_1.Services
 
             return jwtToken.Token == token && jwtToken.ExpiresAt > DateTime.UtcNow;
         }
-        public LogInResponse? Refresh(string refreshToken)
+        public async Task<LogInResponse?> RefreshTokenAsync(string refreshToken)
         {
-            var existingRefreshToken = dbContext.RefreshTokens
+            var existingRefreshToken = await dbContext.RefreshTokens
                 .Include(rt => rt.User)
-                .FirstOrDefault(rt => rt.Token == refreshToken && rt.ExpiresAt > DateTime.UtcNow);
+                .FirstOrDefaultAsync(rt => rt.Token == refreshToken && rt.ExpiresAt > DateTime.UtcNow);
             if (existingRefreshToken is null)
                 return null;
             var (jwt, refresh) = UpdateToken(existingRefreshToken.User);

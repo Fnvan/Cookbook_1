@@ -17,41 +17,41 @@ namespace Cookbook_1.Services
             _mapper = mapper; 
             _applicationDbContext = applicationDbContext;
         }
-        public UserVm CreateNewUser(CreateUserDto user)
+        public async Task<UserVm> CreateNewUserAsync(CreateUserDto user)
         {
-            var newUser = _mapper.Map<User>(user);
-            _applicationDbContext.Users.Add(newUser);
+            var newUser =  _mapper.Map<User>(user);
+            await _applicationDbContext.Users.AddAsync(newUser);
             _applicationDbContext.SaveChanges();
             var userVm = _mapper.Map<UserVm>(newUser);
             return userVm;
         }
 
-        public UserVm GetUserProfile(int userId)
+        public async Task<UserVm> GetUserProfileAsync(int userId)
         {
-            var user = GetUserWithIngredientsOrThrowException(userId);
+            var user = await GetUserWithIngredientsOrThrowException(userId);
             var userVm = _mapper.Map<UserVm>(user);
             return userVm;
         }
 
-        public UserVm UpdateUser(UpdateUserDto user)
+        public async Task <UserVm> UpdateUserAsync(UpdateUserDto user)
         {
             throw new NotImplementedException();
         }
 
-        public void UpdateUserPassword(UpdateUserPasswordDto userPassword)
+        public async Task UpdateUserPasswordAsync(UpdateUserPasswordDto userPassword)
         {
             throw new NotImplementedException();
         }
 
-        List<Recipe> IUserService.ShowUserRecipes(int userId)
+        public async Task<List<Recipe>> ShowUserRecipesAsync(int userId)
         {
             throw new NotImplementedException();
         }
 
-        private User GetUserWithIngredientsOrThrowException(int userId)
+        private async Task<User> GetUserWithIngredientsOrThrowException(int userId)
         {
-            var user = _applicationDbContext.Users.Where(user => user.Id == userId)
-                .Include(r => r.UserRecipes).FirstOrDefault() ?? throw new UserNotFoundException(userId);
+            var user = await _applicationDbContext.Users.Where(user => user.Id == userId)
+                .Include(r => r.UserRecipes).FirstOrDefaultAsync() ?? throw new UserNotFoundException(userId);
             return user;
         }
     }

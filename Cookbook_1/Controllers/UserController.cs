@@ -1,5 +1,6 @@
 ﻿using Cookbook_1.Abstractions;
 using Cookbook_1.Contracts;
+using Cookbook_1.Extentions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -14,17 +15,17 @@ namespace Cookbook_1.Controllers
         //Этот метод доступен без авторизации
         [AllowAnonymous]
         [HttpPost("/registration")]
-        public ActionResult<LogInResponse> CreateNewUser([FromBody] CreateUserDto userDto)
+        public async Task<ActionResult<LogInResponse>> CreateNewUser([FromBody] CreateUserDto userDto)
         {
-            var token = authService.SignUp(userDto);
+            var token = await authService.SignUpAsync(userDto);
             return Ok(token);
         }
 
         [AllowAnonymous]
         [HttpPost("login")]
-        public ActionResult<LogInResponse> LogIn([FromBody] LogInUserDto dto)
+        public async Task<ActionResult<LogInResponse>> LogIn([FromBody] LogInUserDto dto)
         {
-            var result = authService.LogIn(dto.Login, dto.Password);
+            var result = await authService.LogInAsync(dto.Login, dto.Password);
             if (result is null)
                 return Unauthorized();
 
@@ -32,9 +33,10 @@ namespace Cookbook_1.Controllers
         }
 
         [HttpPost("logout")]
-        public ActionResult<bool> LogOut([FromBody] int userId)
+        public async Task<ActionResult<bool>> LogOut([FromBody] int userId)
         {
-            var result = authService.LogOut(userId);
+            //var userId = HttpContext.ExtractUserIdFromClaims();
+            var result = await authService.LogOutAsync(userId);
             if (!result)
             {
                 return NotFound();
@@ -43,15 +45,15 @@ namespace Cookbook_1.Controllers
         }
 
         [HttpPost("refresh")]
-        public ActionResult<LogInResponse> Refresh([FromBody] string refreshToken)
+        public async Task <ActionResult<LogInResponse>> Refresh([FromBody] string refreshToken)
         {
-            var result = authService.Refresh(refreshToken);
+            var result = await authService.RefreshTokenAsync(refreshToken);
             if (result is null)
             {
                 return NotFound();
             }
             return Ok(result);
         }
-        // тест гита
+        
     }
 }

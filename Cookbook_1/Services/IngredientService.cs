@@ -17,31 +17,27 @@ namespace Cookbook_1.Services
             _mapper = mapper;
         }
 
-        public Ingredient GetIngredientById(int ingredientId)
+        public async Task<Ingredient> GetIngredientByIdAsync(int ingredientId)
         {
-            var ingredient = _applicationDbContext.Ingredients.AsNoTracking().FirstOrDefault(ingredient => ingredient.Id == ingredientId)
+            var ingredient = await _applicationDbContext.Ingredients.AsNoTracking().FirstOrDefaultAsync(ingredient => ingredient.Id == ingredientId)
                 ?? throw new IngredientNotFoundException(ingredientId);
             return ingredient;
         }
 
-        public void AddIngredient(string name)
+        public async Task AddIngredientAsync(string name)
         {
-            var checkIfIngredientExists = _applicationDbContext.Ingredients.AsNoTracking().FirstOrDefault(ingredient => ingredient.Name.ToLower() ==  name.ToLower().Trim());
+            var checkIfIngredientExists = await _applicationDbContext.Ingredients.AsNoTracking().FirstOrDefaultAsync(ingredient => ingredient.Name.ToLower() ==  name.ToLower().Trim());
             if (checkIfIngredientExists != null)
             {
                 throw new IngredientAlreadyExistsException(name); // Нет констистентности, другая ошибка возвращает int id
             }
-            Ingredient ingredient = new()
-            {
-                Name = name,
-            };
-            _applicationDbContext.Ingredients.Add(ingredient);
+            _applicationDbContext.Ingredients.Add(new Ingredient { Name = name});
             _applicationDbContext.SaveChanges();
         }
 
-        public void AddIngredientToRecipe(AddIngredientToRecipeDto dto)
+        public async Task AddIngredientToRecipeAsync(AddIngredientToRecipeDto dto)
         {
-            var ingredient = _applicationDbContext.Ingredients.AsNoTracking().FirstOrDefault(ingredient => ingredient.Id == dto.IngredientId)
+            var ingredient = await _applicationDbContext.Ingredients.AsNoTracking().FirstOrDefaultAsync(ingredient => ingredient.Id == dto.IngredientId)
                 ?? throw new IngredientNotFoundException(dto.IngredientId);
 
             var newIngredientInRecipe = _mapper.Map<IngredientInRecipe>(dto);
@@ -50,14 +46,15 @@ namespace Cookbook_1.Services
             _applicationDbContext.SaveChanges();
         }
         
-        public List<Ingredient> ShowAllIngredientsForTest()
+        public async Task<List<Ingredient>> ShowAllIngredientsForTest()
         {
-            var AllIngredients = _applicationDbContext.Ingredients.ToList();
+            var AllIngredients = await _applicationDbContext.Ingredients.ToListAsync();
             return AllIngredients;
         }
-        public List<IngredientInRecipe> ShowAllIngredientsInRecipeForTest()
+
+        public async Task<List<IngredientInRecipe>> ShowAllIngredientsInRecipeForTest()
         {
-            var AllIngredientsInRecipes = _applicationDbContext.IngredientsInRecipes.ToList();
+            var AllIngredientsInRecipes = await _applicationDbContext.IngredientsInRecipes.ToListAsync();
             return AllIngredientsInRecipes;
         }
     }

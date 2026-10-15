@@ -4,6 +4,7 @@ using Cookbook_1.ENums;
 using Cookbook_1.Extentions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Threading.Tasks;
 
 namespace Cookbook_1.Controllers
 {
@@ -21,76 +22,76 @@ namespace Cookbook_1.Controllers
 
         [Authorize]
         [HttpPost("/newrecipe")]
-        public IActionResult CreateNewRecipe(CreateRecipeDto dto)
+        public async Task<IActionResult> CreateNewRecipe(CreateRecipeDto dto, CancellationToken cancellationToken)
         {
             var userId = HttpContext.ExtractUserIdFromClaims();
 
             if (userId is null)
                 return Unauthorized();
 
-            var newRecipe = _recipeService.CreateRecipe(userId.Value, dto);
+            var newRecipe = await _recipeService.CreateRecipeAsync(userId.Value, dto, cancellationToken);
             return Ok(newRecipe);
             
         }
 
         [AllowAnonymous]
         [HttpGet("/recipe/{id}")]
-        public IActionResult GetRecipe(int id)
+        public async Task<IActionResult> GetRecipe(int id, CancellationToken cancellationToken)
         {
-            var recipe = _recipeService.GetRecipe(id);
+            var recipe = await _recipeService.GetRecipeAsync(id, cancellationToken);
             return Ok(recipe);
         }
 
-        [Authorize(Policy = "PostOwner")]
+        [Authorize(Policy = "RecipeOwner")]
         [HttpPut("/{id}/update")]
-        public IActionResult UpdateRecipe(UpdateRecipeDto dto)
+        public async Task<IActionResult> UpdateRecipe(UpdateRecipeDto dto, CancellationToken cancellationToken)
         {
-            _recipeService.UpdateRecipe(dto); 
+            await _recipeService.UpdateRecipeAsync(dto, cancellationToken); 
             return Ok();
         }
 
-        [Authorize (Policy = "PostOwner")]
+        [Authorize (Policy = "RecipeOwner")]
         [HttpDelete("/{id}/delete")]
-        public IActionResult DeleteRecipe(int id)
+        public async Task<IActionResult> DeleteRecipe(int id, CancellationToken cancellationToken)
         {
-            _recipeService.DeleteRecipe(id);
+            await _recipeService.DeleteRecipeAsync(id, cancellationToken);
             return Ok();
         }
 
         [Authorize]
         [HttpPut("/{id}/rate")]
-        public IActionResult RateRecipe(int id, RecipeRating rating)
+        public async Task<IActionResult> RateRecipe(int id, RecipeRating rating, CancellationToken cancellationToken)
         {
             var userId = HttpContext.ExtractUserIdFromClaims();
 
             if (userId is null)
                 return Unauthorized();
 
-            _recipeService.RateTheRecipe(id, userId.Value, rating);
+            await _recipeService.RateTheRecipeAsync(id, userId.Value, rating, cancellationToken);
             return Ok();
         }
 
         [Authorize]
         [HttpPost("/newingredient")]
-        public IActionResult AddIngredient(string name)
+        public async Task<IActionResult> AddIngredient(string name)
         {
-            _ingredientService.AddIngredient(name);
+            await _ingredientService.AddIngredientAsync(name);
             return Ok();
         }
 
         [AllowAnonymous]
         [HttpGet("/user{userId}/allrecipes")]
-        public IActionResult GetUsersRecipes(int userId)
+        public async Task<IActionResult> GetUsersRecipes(int userId, CancellationToken cancellationToken)
         {
-            var usersRecipes = _recipeService.GetFilteredRecipesListByUser(userId);
+            var usersRecipes = await _recipeService.GetFilteredRecipesListByUserAsync(userId, cancellationToken);
             return Ok(usersRecipes);
         }
 
         [AllowAnonymous]
         [HttpGet("/filtered")]
-        public IActionResult GetFilteredRecipeList(double? minRating, int userId, string? recipeName, RecipeFilterBy filterType, bool? ascending)
+        public async Task<IActionResult> GetFilteredRecipeList(double? minRating, int userId, string? recipeName, RecipeFilterBy filterType, bool? ascending, CancellationToken cancellationToken)
         {
-            var filteredRecipeList = _recipeService.GetFilteredRecipeList(minRating, userId, recipeName, filterType, ascending);
+            var filteredRecipeList = await _recipeService.GetFilteredRecipeListAsync(minRating, userId, recipeName, filterType, ascending, cancellationToken);
             return Ok(filteredRecipeList);
         }
     }

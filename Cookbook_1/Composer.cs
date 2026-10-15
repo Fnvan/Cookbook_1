@@ -10,7 +10,6 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System.Security.Claims;
 using System.Text.Json.Serialization;
-using FluentValidation;
 using SharpGrip.FluentValidation.AutoValidation.Mvc.Extensions;
 
 
@@ -27,13 +26,11 @@ namespace Cookbook_1
         }
         public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration configuration)
         {
-            //Добавляем автомаппер 
             services.AddAutoMapper(typeof(Program));
 
             //Подключение БД
             services.AddDbContext<IApplicationDbContext, ApplicationDbContext>(options =>
             {
-                //Указываю, что использую PostgreSql
                 //Указываю ссылку на строку подключения из secrets.json, чтобы пароль не передать
                 options.UseNpgsql(
                     configuration.GetConnectionString("ConnectionString")

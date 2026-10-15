@@ -23,12 +23,23 @@ namespace Cookbook_1.Configurations.Mappings
                 .ForCtorParam(nameof(RecipeVm.Rating), opt => opt.MapFrom(src => src.Rating));
 
 
-            CreateMap<IngredientInRecipeDto, IngredientInRecipe>();
+            CreateMap<IngredientInRecipeDto, IngredientInRecipe>()
+                .ForMember(dest => dest.RecipeId, opt => opt.Ignore())
+                .ForMember(dest => dest.Recipe, opt => opt.Ignore())
+                .ForMember(dest => dest.Ingredient, opt => opt.Ignore());
             
 
-            CreateMap<CreateRecipeDto, Recipe>();
+            // ID, автор и оценки не поступают из запроса на создание рецепта.
+            CreateMap<CreateRecipeDto, Recipe>()
+                .ForMember(dest => dest.Id, opt => opt.Ignore())
+                .ForMember(dest => dest.UserId, opt => opt.Ignore())
+                .ForMember(dest => dest.User, opt => opt.Ignore())
+                .ForMember(dest => dest.Rating, opt => opt.Ignore())
+                .ForMember(dest => dest.ListOfRatings, opt => opt.Ignore());
 
-            CreateMap<AddNewIngredientToRecipeDto, IngredientInRecipe>();
+            CreateMap<AddNewIngredientToRecipeDto, IngredientInRecipe>()
+                .ForMember(dest => dest.Recipe, opt => opt.Ignore())
+                .ForMember(dest => dest.Ingredient, opt => opt.Ignore());
         }
     }
 }
