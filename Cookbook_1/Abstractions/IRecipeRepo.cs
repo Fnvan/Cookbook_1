@@ -8,7 +8,7 @@ namespace Cookbook_1.Abstractions
     {
         public List<RecipeVm> ReturnRecipeListVm();
 
-        public Recipe CreateRecipe(CreateRecipeDto dto);
+        public RecipeVm CreateRecipe(CreateRecipeDto dto);
         public RecipeVm GetRecipe(int id);
 
         public RecipeVm UpdateRecipe(UpdateRecipeDto dto);

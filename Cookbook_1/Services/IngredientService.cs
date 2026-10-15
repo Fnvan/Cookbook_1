@@ -1,33 +1,61 @@
-﻿using Cookbook_1.Abstractions;
+﻿using AutoMapper;
+using Cookbook_1.Abstractions;
 using Cookbook_1.Contracts;
-using Cookbook_1.ENums;
+using Cookbook_1.Exceptions;
 using Cookbook_1.Models;
+using Microsoft.EntityFrameworkCore;
 
 namespace Cookbook_1.Services
 {
     public class IngredientService : IIngredientService
     {
-        private IIngredientRepo _ingredientRepo; 
-        public readonly List<IngredientInRecipe> ingredientsInRecipes = [];
-        public IngredientService(IIngredientRepo ingredientRepo) 
+        private readonly IApplicationDbContext _applicationDbContext; 
+        private readonly IMapper _mapper;
+        public IngredientService(IApplicationDbContext applicationDbContext, IMapper mapper) 
         {
-            _ingredientRepo = ingredientRepo;
+            _applicationDbContext = applicationDbContext;
+            _mapper = mapper;
         }
 
-        public Ingredient GetIngredientById(int ingredientId)
+        public async Task<Ingredient> GetIngredientByIdAsync(int ingredientId)
         {
-            var ingredient = _ingredientRepo.GetIngredientById(ingredientId);
+            var ingredient = await _applicationDbContext.Ingredients.AsNoTracking().FirstOrDefaultAsync(ingredient => ingredient.Id == ingredientId)
+                ?? throw new IngredientNotFoundException(ingredientId);
             return ingredient;
         }
 
-        public void AddIngredient(string name)
+        public async Task AddIngredientAsync(string name)
         {
-            _ingredientRepo.AddNewIngridient(name);
+            var checkIfIngredientExists = await _applicationDbContext.Ingredients.AsNoTracking().FirstOrDefaultAsync(ingredient => ingredient.Name.ToLower() ==  name.ToLower().Trim());
+            if (checkIfIngredientExists != null)
+            {
+                throw new IngredientAlreadyExistsException(name); // Нет констистентности, другая ошибка возвращает int id
+            }
+            _applicationDbContext.Ingredients.Add(new Ingredient { Name = name});
+            _applicationDbContext.SaveChanges();
         }
 
-        public void AddIngredientToRecipe(AddIngredientToRecipeDto dto)
+        public async Task AddIngredientToRecipeAsync(AddIngredientToRecipeDto dto)
         {
-            _ingredientRepo.AddIngredientToRecipe(dto.RecipeId, dto.IngredientId, dto.Amount, dto.Units);  
+            var ingredient = await _applicationDbContext.Ingredients.AsNoTracking().FirstOrDefaultAsync(ingredient => ingredient.Id == dto.IngredientId)
+                ?? throw new IngredientNotFoundException(dto.IngredientId);
+
+            var newIngredientInRecipe = _mapper.Map<IngredientInRecipe>(dto);
+            newIngredientInRecipe.Ingredient = ingredient;
+            _applicationDbContext.IngredientsInRecipes.Add(newIngredientInRecipe);
+            _applicationDbContext.SaveChanges();
+        }
+        
+        public async Task<List<Ingredient>> ShowAllIngredientsForTest()
+        {
+            var AllIngredients = await _applicationDbContext.Ingredients.ToListAsync();
+            return AllIngredients;
+        }
+
+        public async Task<List<IngredientInRecipe>> ShowAllIngredientsInRecipeForTest()
+        {
+            var AllIngredientsInRecipes = await _applicationDbContext.IngredientsInRecipes.ToListAsync();
+            return AllIngredientsInRecipes;
         }
     }
 }

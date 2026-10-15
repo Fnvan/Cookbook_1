@@ -5,10 +5,13 @@ namespace Cookbook_1.Abstractions
 {
     public interface IIngredientService
     {
-        public Ingredient GetIngredientById(int ingredientId);
+        Task <Ingredient> GetIngredientByIdAsync(int ingredientId);
 
-        public void AddIngredient(string name);
+        Task AddIngredientAsync(string name);
 
-        public void AddIngredientToRecipe(AddIngredientToRecipeDto dto);
+        Task AddIngredientToRecipeAsync(AddIngredientToRecipeDto dto);
+
+        Task <List<Ingredient>> ShowAllIngredientsForTest();
+        Task<List<IngredientInRecipe>> ShowAllIngredientsInRecipeForTest();
     }
 }

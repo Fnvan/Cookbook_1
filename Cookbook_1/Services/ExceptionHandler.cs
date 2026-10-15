@@ -14,6 +14,7 @@ namespace Cookbook_1.Services
                 RecipeAlreadyExistsException => (int)HttpStatusCode.Conflict,
                 IngredientNotFoundException => (int)HttpStatusCode.NotFound,
                 IngredientAlreadyExistsException => (int)HttpStatusCode.Conflict,
+                UserNotFoundException => (int)HttpStatusCode.NotFound,
             };
 
             await httpContext.Response.WriteAsync(exception.Message); 

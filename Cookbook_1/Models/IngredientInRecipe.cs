@@ -6,13 +6,11 @@ namespace Cookbook_1.Models
     {
         public int RecipeId { get; set; }
 
-        //public Recipe Recipe { get; set; } //это нам понадобится, если что, уточнить у Миши
+        public Recipe Recipe { get; set; } 
 
-        public required Ingredient Ingredient { get; set; } // отсюда доставать name где надо
+        public required Ingredient Ingredient { get; set; }
 
         public int IngredientId {  get; set; }
-
-        public string IngredientName {  get; set; }
 
         public double Amount { get; set; }
         public Units Units { get; set; }

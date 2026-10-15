@@ -6,6 +6,6 @@ namespace Cookbook_1.Models
     {
         public int Id { get; set; }
         public string Name { get; set; }
-        //Тут ещё будет список рецептов, чтобы получить все рецепты, где используется ингредиент
+        public List<IngredientInRecipe> RecipesList { get; set; } 
     }
 }

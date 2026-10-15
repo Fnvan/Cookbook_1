@@ -11,9 +11,10 @@ namespace Cookbook_1.Configurations.Mappings
             //Сначала маппим вложенные модели
             CreateMap<IngredientInRecipe, IngredientInRecipeVm>()
                 .ForCtorParam(nameof(IngredientInRecipeVm.IngredientName),
-                 opt => opt.MapFrom(src => src.IngredientName))
+                 opt => opt.MapFrom(src => src.Ingredient.Name))
                 .ForCtorParam(nameof(IngredientInRecipeVm.Amount), opt => opt.MapFrom(src => src.Amount))
-                .ForCtorParam(nameof(IngredientInRecipeVm.Units), opt => opt.MapFrom(src => src.Units));
+                .ForCtorParam(nameof(IngredientInRecipeVm.Units), opt => opt.MapFrom(src => src.Units.ToString()));
+
             //потом сам рецепт
             CreateMap<Recipe, RecipeVm>()
                 .ForCtorParam(nameof(RecipeVm.Name), opt => opt.MapFrom(src => src.Name))
@@ -22,14 +23,23 @@ namespace Cookbook_1.Configurations.Mappings
                 .ForCtorParam(nameof(RecipeVm.Rating), opt => opt.MapFrom(src => src.Rating));
 
 
-            CreateMap<IngredientInRecipeDto, IngredientInRecipe>();
+            CreateMap<IngredientInRecipeDto, IngredientInRecipe>()
+                .ForMember(dest => dest.RecipeId, opt => opt.Ignore())
+                .ForMember(dest => dest.Recipe, opt => opt.Ignore())
+                .ForMember(dest => dest.Ingredient, opt => opt.Ignore());
             
 
-            //CreateMap<IngredientInRecipe, Ingredient>()
-            //    .ForCtorParam(nameof(Ingredient.Id), opt => opt.MapFrom(src => src.IngredientId))
-            //    .ForCtorParam(nameof(Ingredient.Name), opt => opt.MapFrom(src => src.IngredientName));
-            CreateMap<CreateRecipeDto, Recipe>();
+            // ID, автор и оценки не поступают из запроса на создание рецепта.
+            CreateMap<CreateRecipeDto, Recipe>()
+                .ForMember(dest => dest.Id, opt => opt.Ignore())
+                .ForMember(dest => dest.UserId, opt => opt.Ignore())
+                .ForMember(dest => dest.User, opt => opt.Ignore())
+                .ForMember(dest => dest.Rating, opt => opt.Ignore())
+                .ForMember(dest => dest.ListOfRatings, opt => opt.Ignore());
 
+            CreateMap<AddNewIngredientToRecipeDto, IngredientInRecipe>()
+                .ForMember(dest => dest.Recipe, opt => opt.Ignore())
+                .ForMember(dest => dest.Ingredient, opt => opt.Ignore());
         }
     }
 }
